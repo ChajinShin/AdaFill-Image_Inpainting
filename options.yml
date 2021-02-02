@@ -1,0 +1,80 @@
+# device settings
+seed: 17                                                   # random seed
+num_workers: 4                                             # data loader workers number
+use_cuda: True                                             # Use GPU
+gpu_idx: '0'                                               # GPU index
+
+# task
+task: 'Pretraining'                                        # Pretraining or AdaFill
+experiment_name: './inpaint_exp'                           # folder name that config, log, and results will be saved
+
+# metric
+metric: 'LPIPS-SSIM-PSNR'                                  # metric type using at pre-training task
+
+
+# -----------------------------------------------------
+# pretraining
+Pretraining:
+  # dataset for places365
+  dataset_dir: '/home/Dataset/places365'                   # places365 dataset folder
+  train_img_list: 'train.txt'                              # train.txt file in places365 dataset
+  val_img_list: 'val.txt'                                  # val.txt file in places365 dataset
+  mask_type: 'random'                                      # Training mask     "ff", "ca", "box", "fixed_box", "random", "user"  available
+  mask_folder_dir: '/home/Dataset/user_mask'               # mask folder loc if mask_type is user
+
+  # models
+  # inpaint network
+  inpaint_cnum: 64                                         # channel number of inpainting network
+  num_of_resblock: 8                                       # number of residual block
+  normalization: 'batch_norm'                              # normalization type:  'batch_norm' or 'instance_norm'
+
+  # discriminator
+  disc_cnum: 64                                            # channel number of discriminator
+
+  inpaint_parameters: './inpaint_exp/ckpt/inpaint.pth'     # location of inpainting network parameter to be saved or loaded
+  disc_parameters: './inpaint_exp/ckpt/disc.pth'           # location of discriminator parameter to be saved or loaded
+
+  # training setups
+  epochs: 1                                                # training epochs
+  batch_size: 16                                           # batch size
+  inpaint_loss: '0.1*NSGAN + 1*L1 + 1*PerceptualLoss + 250*StyleLoss'
+  disc_loss: '1*NSGAN'
+  lr_inpaint: 1e-4                                         # inpainting network learning rate
+  lr_disc: 2e-4                                            # discriminator learning rate
+  beta1: 0.0                                               # Adam optimizer betas
+  beta2: 0.9
+  gamma: 1.0                                               # learning rate decay for exponential decaying
+  gan_k: 1                                                 # iteration of discriminator update
+
+  # misc
+  test_only: False                                         # You can only test pre-trained model using True option.
+  log_step: 150                                            # step of printing log
+  eval_step: 20000                                         # step of evaluation
+  save_step: 20000                                         # step of saving parameters
+
+
+
+
+# ----------------------------------------------------------
+# AdaFill
+AdaFill:
+  # dataset
+  flist: './flist.txt'                                     # location of 'flist.txt'
+  mask_type: 'ff'                                          # "ff", "ca", "box", "fixed_box", "random"  available
+  reuse_parent_mask: False                                 # use augmented parent mask as child mask with a certain rate
+
+  # models
+  cnum: 64                                                 # channel number of inpainting network
+  num_of_resblock: 8                                       # number of residual block
+  normalization: 'batch_norm'                              # normalization type:  'batch_norm' or 'instance_norm'
+
+  inpaint_parameters: './ckpt/final_result.pth'            # location of inpainting network parameter to be loaded
+
+  # Test
+  iterations: 1000                                         # training iteration
+  inpaint_lr: 1e-4                                         # training learning rate
+  betas:                                                   # Adam optimizer betas
+    - 0.5
+    - 0.9
+  inpaint_loss: '1*L1'                                     # AdaFill loss setting
+  batch_size: 8                                            # batch size
